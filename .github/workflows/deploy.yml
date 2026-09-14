@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Astro Site to GitHub Pages
 
 on:
   push:
@@ -14,10 +14,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+      # Step 1: Clone the repository files
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 👇 PLACE IT HERE (Right after actions/checkout)
       - name: Install, build, and upload site
         uses: withastro/action@v3
+        with:
+          node-version: 22
 
   deploy:
     needs: build

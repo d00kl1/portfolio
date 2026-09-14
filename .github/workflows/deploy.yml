@@ -16,7 +16,7 @@ jobs:
     steps:
       # Step 1: Clone the repository files
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       # 👇 PLACE IT HERE (Right after actions/checkout)
       - name: Install, build, and upload site

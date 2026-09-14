@@ -1,0 +1,212 @@
+---
+// src/components/Lightbox.astro
+---
+
+<!-- Lightbox Modal -->
+<div id="lightbox-modal" class="lightbox-overlay" aria-hidden="true">
+  <div class="lightbox-toolbar">
+    <div class="zoom-controls">
+      <button id="zoom-in" aria-label="Zoom in">+</button>
+      <button id="zoom-out" aria-label="Zoom out">−</button>
+      <button id="zoom-reset" aria-label="Reset zoom">Reset</button>
+    </div>
+    <button id="lightbox-close" aria-label="Close lightbox">&times;</button>
+  </div>
+
+  <div class="lightbox-viewport" id="lightbox-viewport">
+    <img id="lightbox-img" src="" alt="" draggable="false" />
+  </div>
+</div>
+
+<style>
+  .lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.92);
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .lightbox-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .lightbox-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    z-index: 1010;
+  }
+
+  .zoom-controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .lightbox-toolbar button {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: none;
+    padding: 0.5rem 0.85rem;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+  }
+
+  .lightbox-toolbar button:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  #lightbox-close {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .lightbox-viewport {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .lightbox-viewport:active {
+    cursor: grabbing;
+  }
+
+  #lightbox-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    transition: transform 0.15s ease-out;
+    transform-origin: center center;
+  }
+</style>
+
+<script>
+  let scale = 1;
+  let pointX = 0;
+  let pointY = 0;
+  let startX = 0;
+  let startY = 0;
+  let isDragging = false;
+
+  const modal = document.getElementById('lightbox-modal');
+  const img = document.getElementById('lightbox-img') as HTMLImageElement;
+  const viewport = document.getElementById('lightbox-viewport');
+
+  const btnZoomIn = document.getElementById('zoom-in');
+  const btnZoomOut = document.getElementById('zoom-out');
+  const btnReset = document.getElementById('zoom-reset');
+  const btnClose = document.getElementById('lightbox-close');
+
+  function updateTransform() {
+    if (img) {
+      img.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+    }
+  }
+
+  function resetTransform() {
+    scale = 1;
+    pointX = 0;
+    pointY = 0;
+    updateTransform();
+  }
+
+  // Open Lightbox
+  document.addEventListener('click', (e) => {
+    const target = (e.target as HTMLElement).closest('[data-lightbox-src]');
+    if (target) {
+      e.preventDefault();
+      const src = target.getAttribute('data-lightbox-src');
+      const alt = target.getAttribute('data-lightbox-alt') || '';
+      if (src && img && modal) {
+        img.src = src;
+        img.alt = alt;
+        resetTransform();
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+    }
+  });
+
+  // Close Lightbox
+  function closeModal() {
+    if (modal) {
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      resetTransform();
+    }
+  }
+
+  btnClose?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e) => {
+    if (e.target === viewport || e.target === modal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+      closeModal();
+    }
+  });
+
+  // Zoom Button Handlers
+  btnZoomIn?.addEventListener('click', () => {
+    scale = Math.min(scale + 0.5, 4);
+    updateTransform();
+  });
+
+  btnZoomOut?.addEventListener('click', () => {
+    scale = Math.max(scale - 0.5, 1);
+    if (scale === 1) {
+      pointX = 0;
+      pointY = 0;
+    }
+    updateTransform();
+  });
+
+  btnReset?.addEventListener('click', resetTransform);
+
+  // Mouse Wheel Zooming
+  viewport?.addEventListener('wheel', (e) => {
+    if (!modal?.classList.contains('active')) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.2 : -0.2;
+    scale = Math.min(Math.max(1, scale + delta), 4);
+    if (scale === 1) {
+      pointX = 0;
+      pointY = 0;
+    }
+    updateTransform();
+  }, { passive: false });
+
+  // Pan / Drag Functionality
+  viewport?.addEventListener('mousedown', (e) => {
+    if (scale <= 1) return;
+    isDragging = true;
+    startX = e.clientX - pointX;
+    startY = e.clientY - pointY;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    pointX = e.clientX - startX;
+    pointY = e.clientY - startY;
+    updateTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+</script>

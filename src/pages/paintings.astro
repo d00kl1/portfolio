@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import PortfolioLayout from '../layouts/Layout.astro';
+import Lightbox from '../components/Lightbox.astro';
+
+const paintings = await getCollection('paintings');
+const sortedPaintings = paintings.sort((a, b) => b.data.year - a.data.year);
+---
+
+<PortfolioLayout title="Paintings — Harikrishnan Varma">
+  <main class="gallery-container">
+    <header class="gallery-header">
+      <h1>Paintings</h1>
+    </header>
+
+    <div class="gallery-grid">
+      {sortedPaintings.map((item) => (
+        <article class="art-card">
+          <!-- Lightbox Trigger Attribute -->
+          <div 
+            class="image-frame" 
+            data-lightbox-src={item.data.coverImage.src} 
+            data-lightbox-alt={item.data.alt}
+          >
+            <Image 
+              src={item.data.coverImage} 
+              alt={item.data.alt} 
+              width={800} 
+              format="webp" 
+            />
+          </div>
+          <div class="art-details">
+            <a href={`/paintings/${item.id}`}>
+              <h2>{item.data.title}</h2>
+            </a>
+            <p class="meta">{item.data.medium} • {item.data.year}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </main>
+
+  <!-- Include the Lightbox once on the page -->
+  <Lightbox />
+</PortfolioLayout>
+
+<style>
+  .image-frame {
+    cursor: zoom-in;
+  }
+</style>

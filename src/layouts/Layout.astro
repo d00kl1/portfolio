@@ -1,23 +1,96 @@
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
-</html>
+---
+import Navigation from '../components/Navigation.astro';
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { 
+  title = "Portfolio", 
+  description = "Paintings, Drawings, and Manga." 
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="site-shell">
+      <Navigation />
+      <main class="page-content">
+        <slot />
+      </main>
+    </div>
+
+    <style is:global>
+      :root {
+        --bg-color: #ffffff;
+        --text-color: #111111;
+        --muted-color: #707070;
+        --border-color: #f0f0f0;
+        --sidebar-width: 260px;
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html, body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: var(--font-sans);
+        font-weight: 300;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+    </style>
+
+    <style>
+      .site-shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .page-content {
+        flex: 1;
+        padding: 1.5rem;
+      }
+
+      @media (min-width: 900px) {
+        .site-shell {
+          flex-direction: row;
+        }
+
+        .page-content {
+          margin-left: var(--sidebar-width);
+          padding: 3.5rem 4rem 4rem 3.5rem;
+        }
+      }
+    </style>
+  </body>
+</html>

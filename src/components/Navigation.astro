@@ -1,0 +1,154 @@
+---
+const currentPath = Astro.url.pathname;
+
+const navLinks = [  
+  { name: "Paintings", href: "/paintings" },
+  { name: "Drawings", href: "/drawings" },
+  { name: "Manga", href: "/manga" },
+  { name: "About", href: "/about" },
+  { name: "Contact", href: "/contact" },
+];
+---
+
+<header class="sidebar">
+  <div class="brand-bar">
+    <a href="/" class="brand-title">HARIKRISHNAN VARMA</a>
+    <button id="menu-toggle" class="mobile-toggle" aria-label="Toggle Menu">
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+  </div>
+
+  <nav id="nav-content" class="nav-content">
+    <ul class="nav-links">
+      {navLinks.map((link) => (
+        <li>
+          <a 
+            href={link.href} 
+            class={currentPath === link.href ? 'active' : ''}
+          >
+            {link.name}
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <footer class="sidebar-footer">
+      <p>&copy; {new Date().getFullYear()} Harikrishnan Varma All Rights Reserved</p>
+    </footer>
+  </nav>
+</header>
+
+<script>
+  const toggleBtn = document.getElementById('menu-toggle');
+  const navContent = document.getElementById('nav-content');
+
+  toggleBtn?.addEventListener('click', () => {
+    navContent?.classList.toggle('open');
+  });
+</script>
+
+<style>
+  .sidebar {
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .brand-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .brand-title {
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+
+  .mobile-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .bar {
+    width: 20px;
+    height: 1px;
+    background-color: var(--text-color);
+  }
+
+  .nav-content {
+    display: none;
+    padding: 1.5rem;
+  }
+
+  .nav-content.open {
+    display: block;
+  }
+
+  .nav-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .nav-links a {
+    font-size: 0.95rem;
+    color: var(--muted-color);
+    transition: color 0.2s ease;
+  }
+
+  .nav-links a:hover,
+  .nav-links a.active {
+    color: var(--text-color);
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  @media (min-width: 900px) {
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-width);
+      border-bottom: none;
+      border-right: 1px solid var(--border-color);
+      padding: 3.5rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .mobile-toggle {
+      display: none;
+    }
+
+    .nav-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+      margin-top: 3rem;
+      padding: 0;
+    }
+
+    .sidebar-footer {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted-color);
+    }
+  }
+</style>

@@ -1,5 +1,5 @@
 ---
-layout: ../components/Navigation.astro
+layout: ../layouts/Layout.astro
 title: My Markdown page
 ---
 # About

@@ -1,212 +1,308 @@
 ---
-// src/components/Lightbox.astro
+/* Lightbox.astro - Global accessible modal lightbox */
 ---
 
-<!-- Lightbox Modal -->
-<div id="lightbox-modal" class="lightbox-overlay" aria-hidden="true">
-  <div class="lightbox-toolbar">
-    <div class="zoom-controls">
-      <button id="zoom-in" aria-label="Zoom in">+</button>
-      <button id="zoom-out" aria-label="Zoom out">−</button>
-      <button id="zoom-reset" aria-label="Reset zoom">Reset</button>
-    </div>
-    <button id="lightbox-close" aria-label="Close lightbox">&times;</button>
-  </div>
+<dialog id="global-lightbox" class="lightbox-dialog" aria-label="Media viewer">
+  <div class="lightbox-content">
+    <button id="lightbox-close" class="nav-btn close-btn" aria-label="Close lightbox">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
 
-  <div class="lightbox-viewport" id="lightbox-viewport">
-    <img id="lightbox-img" src="" alt="" draggable="false" />
+    <button id="lightbox-prev" class="nav-btn prev-btn" aria-label="Previous artwork">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+
+    <div class="lightbox-stage">
+      <img id="lightbox-img" src="" alt="" />
+      <div id="lightbox-caption" class="lightbox-caption">
+        <h3 id="lightbox-title"></h3>
+        <p id="lightbox-meta"></p>
+      </div>
+    </div>
+
+    <button id="lightbox-next" class="nav-btn next-btn" aria-label="Next artwork">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
   </div>
-</div>
+</dialog>
 
 <style>
-  .lightbox-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background-color: rgba(0, 0, 0, 0.92);
-    display: flex;
-    flex-direction: column;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-
-  .lightbox-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .lightbox-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    z-index: 1010;
-  }
-
-  .zoom-controls {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .lightbox-toolbar button {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
+  .lightbox-dialog {
+    margin: auto;
+    padding: 0;
     border: none;
-    padding: 0.5rem 0.85rem;
-    font-size: 1rem;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background 0.15s ease;
+    background: transparent;
+    max-width: 100vw;
+    max-height: 100vh;
+    width: 100vw;
+    height: 100vh;
+    color: #ffffff;
+    overflow: hidden;
   }
 
-  .lightbox-toolbar button:hover {
-    background: rgba(255, 255, 255, 0.3);
+  .lightbox-dialog::backdrop {
+    background: rgba(10, 10, 10, 0.92);
+    backdrop-filter: blur(8px);
   }
 
-  #lightbox-close {
-    font-size: 1.5rem;
-    line-height: 1;
-  }
-
-  .lightbox-viewport {
-    flex: 1;
+  .lightbox-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    cursor: grab;
-    user-select: none;
+    padding: 1.5rem;
+    box-sizing: border-box;
   }
 
-  .lightbox-viewport:active {
-    cursor: grabbing;
+  .lightbox-stage {
+    position: relative;
+    max-width: calc(100vw - 3rem);
+    max-height: calc(100vh - 5rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
-  #lightbox-img {
-    max-width: 90vw;
-    max-height: 85vh;
+  .lightbox-stage img {
+    max-width: 100%;
+    max-height: calc(100vh - 7rem);
+    width: auto;
+    height: auto;
     object-fit: contain;
-    transition: transform 0.15s ease-out;
-    transform-origin: center center;
+    border-radius: 2px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .lightbox-caption {
+    margin-top: 0.875rem;
+    text-align: center;
+  }
+
+  .lightbox-caption h3 {
+    font-size: 0.9375rem;
+    font-weight: 400;
+    margin: 0;
+    color: #ffffff;
+    letter-spacing: 0.01em;
+  }
+
+  .lightbox-caption p {
+    font-size: 0.8125rem;
+    color: #a0a0a0;
+    margin: 0.25rem 0 0 0;
+  }
+
+  .nav-btn {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    z-index: 10;
+  }
+
+  .nav-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .close-btn {
+    top: 1.5rem;
+    right: 1.5rem;
+  }
+
+  .prev-btn {
+    left: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .next-btn {
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  @media (max-width: 768px) {
+    .lightbox-content {
+      padding: 1rem;
+    }
+
+    .lightbox-stage {
+      max-width: 100vw;
+      max-height: calc(100vh - 4rem);
+    }
+
+    .lightbox-stage img {
+      max-height: calc(100vh - 8rem);
+    }
+
+    .prev-btn {
+      left: 0.5rem;
+    }
+
+    .next-btn {
+      right: 0.5rem;
+    }
+
+    .close-btn {
+      top: 0.75rem;
+      right: 0.75rem;
+    }
   }
 </style>
 
 <script>
-  let scale = 1;
-  let pointX = 0;
-  let pointY = 0;
-  let startX = 0;
-  let startY = 0;
-  let isDragging = false;
+  function setupGlobalLightbox() {
+    const dialog = document.getElementById('global-lightbox') as HTMLDialogElement | null;
+    const img = document.getElementById('lightbox-img') as HTMLImageElement | null;
+    const titleEl = document.getElementById('lightbox-title');
+    const metaEl = document.getElementById('lightbox-meta');
+    const captionBox = document.getElementById('lightbox-caption');
+    const closeBtn = document.getElementById('lightbox-close');
+    const prevBtn = document.getElementById('lightbox-prev');
+    const nextBtn = document.getElementById('lightbox-next');
 
-  const modal = document.getElementById('lightbox-modal');
-  const img = document.getElementById('lightbox-img') as HTMLImageElement;
-  const viewport = document.getElementById('lightbox-viewport');
+    if (!dialog || !img) return;
 
-  const btnZoomIn = document.getElementById('zoom-in');
-  const btnZoomOut = document.getElementById('zoom-out');
-  const btnReset = document.getElementById('zoom-reset');
-  const btnClose = document.getElementById('lightbox-close');
+    let items: HTMLElement[] = [];
+    let currentIndex = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
 
-  function updateTransform() {
-    if (img) {
-      img.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
-    }
-  }
+    const renderActiveImage = () => {
+      const activeTrigger = items[currentIndex];
+      if (!activeTrigger) return;
 
-  function resetTransform() {
-    scale = 1;
-    pointX = 0;
-    pointY = 0;
-    updateTransform();
-  }
+      const src = activeTrigger.getAttribute('data-lightbox-src') || '';
+      const alt = activeTrigger.getAttribute('data-lightbox-alt') || '';
+      const title = activeTrigger.getAttribute('data-lightbox-title') || '';
+      const meta = activeTrigger.getAttribute('data-lightbox-meta') || '';
 
-  // Open Lightbox
-  document.addEventListener('click', (e) => {
-    const target = (e.target as HTMLElement).closest('[data-lightbox-src]');
-    if (target) {
-      e.preventDefault();
-      const src = target.getAttribute('data-lightbox-src');
-      const alt = target.getAttribute('data-lightbox-alt') || '';
-      if (src && img && modal) {
-        img.src = src;
-        img.alt = alt;
-        resetTransform();
-        modal.classList.add('active');
-        modal.setAttribute('aria-hidden', 'false');
+      img.src = src;
+      img.alt = alt;
+
+      if (titleEl) titleEl.textContent = title;
+      if (metaEl) metaEl.textContent = meta;
+
+      if (captionBox) {
+        captionBox.style.display = (title || meta) ? 'block' : 'none';
       }
-    }
-  });
+    };
 
-  // Close Lightbox
-  function closeModal() {
-    if (modal) {
-      modal.classList.remove('active');
-      modal.setAttribute('aria-hidden', 'true');
-      resetTransform();
-    }
+    const showPrev = () => {
+      if (items.length <= 1) return;
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      renderActiveImage();
+    };
+
+    const showNext = () => {
+      if (items.length <= 1) return;
+      currentIndex = (currentIndex + 1) % items.length;
+      renderActiveImage();
+    };
+
+    const closeModal = () => {
+      if (dialog && dialog.open) {
+        dialog.close();
+        document.body.style.overflow = '';
+      }
+    };
+
+    // Attach explicit addEventListener rather than property assignments
+    prevBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      showPrev();
+    });
+
+    nextBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      showNext();
+    });
+
+    closeBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeModal();
+    });
+
+    // Global click listener for triggers
+    const handleTriggerClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const trigger = target.closest('[data-lightbox-src]') as HTMLElement;
+
+      if (!trigger) return;
+
+      items = Array.from(document.querySelectorAll('[data-lightbox-src]'));
+      currentIndex = items.indexOf(trigger);
+
+      if (currentIndex !== -1) {
+        renderActiveImage();
+
+        if (prevBtn && nextBtn) {
+          const hasMultiple = items.length > 1;
+          prevBtn.style.display = hasMultiple ? 'flex' : 'none';
+          nextBtn.style.display = hasMultiple ? 'flex' : 'none';
+        }
+
+        dialog.showModal();
+        document.body.style.overflow = 'hidden';
+      }
+    };
+
+    document.removeEventListener('click', handleTriggerClick);
+    document.addEventListener('click', handleTriggerClick);
+
+    // Keyboard Navigation
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!dialog.open) return;
+      if (e.key === 'ArrowLeft') showPrev();
+      if (e.key === 'ArrowRight') showNext();
+      if (e.key === 'Escape') closeModal();
+    };
+
+    document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Touch Support
+    dialog.addEventListener('touchstart', (e: TouchEvent) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    dialog.addEventListener('touchend', (e: TouchEvent) => {
+      if (!dialog.open || items.length <= 1) return;
+
+      const deltaX = e.changedTouches[0].screenX - touchStartX;
+      const deltaY = e.changedTouches[0].screenY - touchStartY;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) >= 40) {
+        if (deltaX < 0) showNext();
+        else showPrev();
+      }
+    }, { passive: true });
+
+    // Backdrop Click Close
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) closeModal();
+    });
+
+    dialog.addEventListener('close', () => {
+      document.body.style.overflow = '';
+    });
   }
 
-  btnClose?.addEventListener('click', closeModal);
-  modal?.addEventListener('click', (e) => {
-    if (e.target === viewport || e.target === modal) {
-      closeModal();
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal?.classList.contains('active')) {
-      closeModal();
-    }
-  });
-
-  // Zoom Button Handlers
-  btnZoomIn?.addEventListener('click', () => {
-    scale = Math.min(scale + 0.5, 4);
-    updateTransform();
-  });
-
-  btnZoomOut?.addEventListener('click', () => {
-    scale = Math.max(scale - 0.5, 1);
-    if (scale === 1) {
-      pointX = 0;
-      pointY = 0;
-    }
-    updateTransform();
-  });
-
-  btnReset?.addEventListener('click', resetTransform);
-
-  // Mouse Wheel Zooming
-  viewport?.addEventListener('wheel', (e) => {
-    if (!modal?.classList.contains('active')) return;
-    e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.2 : -0.2;
-    scale = Math.min(Math.max(1, scale + delta), 4);
-    if (scale === 1) {
-      pointX = 0;
-      pointY = 0;
-    }
-    updateTransform();
-  }, { passive: false });
-
-  // Pan / Drag Functionality
-  viewport?.addEventListener('mousedown', (e) => {
-    if (scale <= 1) return;
-    isDragging = true;
-    startX = e.clientX - pointX;
-    startY = e.clientY - pointY;
-  });
-
-  window.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    pointX = e.clientX - startX;
-    pointY = e.clientY - startY;
-    updateTransform();
-  });
-
-  window.addEventListener('mouseup', () => {
-    isDragging = false;
-  });
+  document.addEventListener('DOMContentLoaded', setupGlobalLightbox);
+  document.addEventListener('astro:page-load', setupGlobalLightbox);
 </script>

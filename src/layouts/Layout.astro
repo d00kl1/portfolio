@@ -1,5 +1,6 @@
 ---
 import Navigation from '../components/Navigation.astro';
+import Footer from '../components/Footer.astro';
 
 interface Props {
   title?: string;
@@ -7,8 +8,8 @@ interface Props {
 }
 
 const { 
-  title = "Portfolio", 
-  description = "Paintings, Drawings, and Manga." 
+  title = "Harikrishnan Varma — Portfolio", 
+  description = "Paintings, Drawings, and Manga by Harikrishnan Varma." 
 } = Astro.props;
 ---
 
@@ -19,7 +20,11 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -27,18 +32,20 @@ const {
   <body>
     <div class="site-shell">
       <Navigation />
-      <main class="page-content">
+      <main id="main-content" class="page-content">
         <slot />
       </main>
+      <Footer />
     </div>
 
+    <!-- Global Design System -->
     <style is:global>
       :root {
         --bg-color: #ffffff;
         --text-color: #111111;
         --muted-color: #707070;
         --border-color: #f0f0f0;
-        --sidebar-width: 260px;
+        --max-width: 1200px;
         --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
 
@@ -48,6 +55,10 @@ const {
         padding: 0;
       }
 
+      html {
+        scroll-behavior: smooth;
+      }
+
       html, body {
         background-color: var(--bg-color);
         color: var(--text-color);
@@ -55,6 +66,7 @@ const {
         font-weight: 300;
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
       a {
@@ -67,8 +79,22 @@ const {
         height: auto;
         display: block;
       }
+
+      /* Screen reader utility for accessibility */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
     </style>
 
+    <!-- Layout Architecture -->
     <style>
       .site-shell {
         display: flex;
@@ -78,17 +104,21 @@ const {
 
       .page-content {
         flex: 1;
-        padding: 1.5rem;
+        width: 100%;
+        max-width: var(--max-width);
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
       }
 
-      @media (min-width: 900px) {
-        .site-shell {
-          flex-direction: row;
-        }
-
+      @media (min-width: 768px) {
         .page-content {
-          margin-left: var(--sidebar-width);
-          padding: 3.5rem 4rem 4rem 3.5rem;
+          padding: 3rem 2rem;
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .page-content {
+          padding: 4rem 2.5rem;
         }
       }
     </style>

@@ -1,0 +1,260 @@
+---
+interface Props {
+  title: string;
+  chapterNumber: string;
+  pages: string[];
+}
+
+const { title, chapterNumber, pages } = Astro.props;
+---
+
+<div id="manga-reader" class="relative w-screen h-[100dvh] bg-neutral-950 text-white overflow-hidden select-none font-sans">
+  <!-- Top Navigation Bar -->
+  <header id="reader-header" class="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 md:px-6 py-3 bg-gradient-to-b from-black/95 via-black/80 to-transparent transition-opacity duration-200 opacity-100">
+    <div class="flex items-center gap-3 truncate max-w-[55%]">
+      <a href="/" class="p-1.5 text-neutral-400 hover:text-white transition-colors" aria-label="Exit Reader">
+        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </a>
+      <div class="truncate">
+        <h1 class="text-xs md:text-sm font-bold tracking-wide text-neutral-200 truncate">{title}</h1>
+        <p class="text-[10px] md:text-xs text-neutral-400">Chapter {chapterNumber}</p>
+      </div>
+    </div>
+
+    <!-- Header Controls -->
+    <div class="flex items-center gap-1.5 md:gap-3">
+      <!-- Spread Toggle (Desktop Only) -->
+      <button id="toggle-spread" class="hidden md:block px-2.5 py-1 text-xs font-semibold bg-neutral-800/80 hover:bg-neutral-700 rounded border border-neutral-700 transition">
+        <span id="spread-label">2-Page Spread</span>
+      </button>
+
+      <!-- Reading Direction Toggle -->
+      <button id="toggle-dir" class="px-2.5 py-1 text-[11px] md:text-xs font-semibold bg-neutral-800/80 hover:bg-neutral-700 rounded border border-neutral-700 transition">
+        <span id="dir-label">RTL</span>
+      </button>
+
+      <!-- Fullscreen Toggle (Desktop Only) -->
+      <button id="toggle-fullscreen" class="hidden md:block p-1.5 text-neutral-400 hover:text-white transition" aria-label="Toggle Fullscreen">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Viewport Stage -->
+  <main id="reader-stage" class="w-full h-full flex items-center justify-center p-0 md:p-2 cursor-pointer">
+    <div id="page-container" class="flex items-center justify-center h-full max-h-full max-w-full gap-0">
+      <!-- Images rendered dynamically via JS -->
+    </div>
+  </main>
+
+  <!-- Side Navigation Tap Zones (Restricted width to preserve center UI toggle zone) -->
+  <div id="prev-zone" class="absolute top-16 bottom-16 left-0 w-[20%] z-10 hidden md:block" title="Previous Page"></div>
+  <div id="next-zone" class="absolute top-16 bottom-16 right-0 w-[20%] z-10 hidden md:block" title="Next Page"></div>
+
+  <!-- Bottom Navigation & Slider Bar -->
+  <footer id="reader-footer" class="absolute bottom-0 left-0 right-0 z-30 px-4 md:px-6 py-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent transition-opacity duration-200 opacity-100">
+    <div class="max-w-xl mx-auto flex items-center gap-3 md:gap-4">
+      <span id="page-indicator" class="text-[11px] md:text-xs font-mono text-neutral-300 w-16 text-right select-none">1 / {pages.length}</span>
+      <input 
+        type="range" 
+        id="page-slider" 
+        min="0" 
+        max={pages.length - 1} 
+        value="0"
+        class="w-full accent-red-600 h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer" 
+      />
+    </div>
+  </footer>
+</div>
+
+<script is:inline define:vars={{ pages }}>
+  // State Initialization
+  let currentPage = 0;
+  let isMobile = window.innerWidth < 768;
+  let isDoubleSpread = !isMobile; 
+  let isRTL = true;
+  let controlsVisible = true;
+
+  // DOM Handles
+  const container = document.getElementById('page-container');
+  const pageIndicator = document.getElementById('page-indicator');
+  const pageSlider = document.getElementById('page-slider');
+  const header = document.getElementById('reader-header');
+  const footer = document.getElementById('reader-footer');
+  const spreadLabel = document.getElementById('spread-label');
+  const dirLabel = document.getElementById('dir-label');
+  const stage = document.getElementById('reader-stage');
+
+  // Page Preloader Helper
+  function preloadImages(indices) {
+    indices.forEach(idx => {
+      if (idx >= 0 && idx < pages.length) {
+        const img = new Image();
+        img.src = pages[idx];
+      }
+    });
+  }
+
+  // Primary Render Cycle
+  function renderPages() {
+    container.innerHTML = '';
+
+    let pagesToDisplay = [currentPage];
+    
+    // Allow spread mode on desktop for middle pages
+    if (isDoubleSpread && !isMobile && currentPage > 0 && currentPage + 1 < pages.length) {
+      pagesToDisplay.push(currentPage + 1);
+    }
+
+    // Apply RTL orientation if active
+    if (isRTL && pagesToDisplay.length > 1) {
+      pagesToDisplay.reverse();
+    }
+
+    // Mount images
+    pagesToDisplay.forEach((idx) => {
+      const img = document.createElement('img');
+      img.src = pages[idx];
+      img.alt = `Page ${idx + 1}`;
+      img.className = 'max-h-full max-w-full object-contain select-none shadow-2xl';
+      container.appendChild(img);
+    });
+
+    // Update Controls
+    pageSlider.value = currentPage;
+    pageIndicator.innerText = isDoubleSpread && !isMobile && pagesToDisplay.length > 1 
+      ? `${currentPage + 1}-${currentPage + 2} / ${pages.length}`
+      : `${currentPage + 1} / ${pages.length}`;
+
+    // Preload next 2 pages in advance
+    preloadImages([currentPage + 1, currentPage + 2]);
+  }
+
+  function nextPage() {
+    const step = isDoubleSpread && !isMobile && currentPage > 0 ? 2 : 1;
+    if (currentPage + step < pages.length) {
+      currentPage += step;
+      renderPages();
+    }
+  }
+
+  function prevPage() {
+    const step = isDoubleSpread && !isMobile && currentPage > 1 ? 2 : 1;
+    if (currentPage - step >= 0) {
+      currentPage -= step;
+      renderPages();
+    }
+  }
+
+  // Touch Swipe Gesture Processing
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  stage.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+
+  stage.addEventListener('touchend', (e) => {
+    const touchEndX = e.changedTouches[0].screenX;
+    const touchEndY = e.changedTouches[0].screenY;
+    
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+
+    // Detect horizontal swipe vs vertical scroll
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX < 0) {
+        // Swiped Left
+        isRTL ? prevPage() : nextPage();
+      } else {
+        // Swiped Right
+        isRTL ? nextPage() : prevPage();
+      }
+    } else if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+      // Tap detected (not a swipe) -> Toggle Controls Overlay
+      toggleControls();
+    }
+  }, { passive: true });
+
+  // Mouse Click Handling for Side Hotspots & Center Toggles
+  document.getElementById('next-zone').addEventListener('click', (e) => {
+    e.stopPropagation();
+    isRTL ? prevPage() : nextPage();
+  });
+
+  document.getElementById('prev-zone').addEventListener('click', (e) => {
+    e.stopPropagation();
+    isRTL ? nextPage() : prevPage();
+  });
+
+  // Keyboard Shortcuts
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'd') {
+      isRTL ? prevPage() : nextPage();
+    } else if (e.key === 'ArrowLeft' || e.key === 'a') {
+      isRTL ? nextPage() : prevPage();
+    } else if (e.key === 'f') {
+      toggleFullscreen();
+    } else if (e.key === ' ') {
+      toggleControls();
+    }
+  });
+
+  // Slider Scrubbing
+  pageSlider.addEventListener('input', (e) => {
+    currentPage = parseInt(e.target.value, 10);
+    renderPages();
+  });
+
+  // Configuration Toggles
+  if (spreadLabel) {
+    document.getElementById('toggle-spread').addEventListener('click', () => {
+      isDoubleSpread = !isDoubleSpread;
+      spreadLabel.innerText = isDoubleSpread ? '2-Page Spread' : 'Single Page';
+      renderPages();
+    });
+  }
+
+  document.getElementById('toggle-dir').addEventListener('click', () => {
+    isRTL = !isRTL;
+    dirLabel.innerText = isRTL ? 'RTL' : 'LTR';
+    renderPages();
+  });
+
+  function toggleControls() {
+    controlsVisible = !controlsVisible;
+    header.style.opacity = controlsVisible ? '1' : '0';
+    header.style.pointerEvents = controlsVisible ? 'auto' : 'none';
+    footer.style.opacity = controlsVisible ? '1' : '0';
+    footer.style.pointerEvents = controlsVisible ? 'auto' : 'none';
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
+
+  const fsBtn = document.getElementById('toggle-fullscreen');
+  if (fsBtn) fsBtn.addEventListener('click', toggleFullscreen);
+
+  // Resize Listener: Responsive Layout Switching
+  window.addEventListener('resize', () => {
+    const mobileCheck = window.innerWidth < 768;
+    if (mobileCheck !== isMobile) {
+      isMobile = mobileCheck;
+      if (isMobile) isDoubleSpread = false;
+      renderPages();
+    }
+  });
+
+  // Initial Execution
+  renderPages();
+</script>

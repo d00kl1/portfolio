@@ -11,6 +11,7 @@ const paintings = defineCollection({
       title: z.string(),
       year: z.number(),
       medium: z.string(),
+      dimensions: z.string(),
       coverImage: image(),
       alt: z.string().default('Oil painting artwork'),
     }),

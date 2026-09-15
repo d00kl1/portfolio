@@ -18,6 +18,7 @@ const navItems = [
       aria-label="Toggle Navigation" 
       aria-controls="nav-menu"
       aria-expanded="false"
+      type="button"
     >
       <span class="hamburger"></span>
     </button>
@@ -34,42 +35,58 @@ const navItems = [
 </header>
 
 <script>
-  function setupNav() {
+  function initNavigation() {
     const toggleBtn = document.getElementById('menu-toggle');
     const navMenu = document.getElementById('nav-menu');
 
     if (!toggleBtn || !navMenu) return;
 
-    // Clean toggle handler
+    // Direct toggle implementation
     const toggleMenu = () => {
       const isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-      toggleBtn.setAttribute('aria-expanded', (!isExpanded).toString());
-      navMenu.classList.toggle('is-open');
+      const newState = !isExpanded;
+      
+      toggleBtn.setAttribute('aria-expanded', newState.toString());
+      navMenu.classList.toggle('is-open', newState);
+      
+      // Prevent body scroll on mobile overlay
+      if (window.innerWidth < 768) {
+        document.body.style.overflow = newState ? 'hidden' : '';
+      }
     };
 
     const closeMenu = () => {
       toggleBtn.setAttribute('aria-expanded', 'false');
       navMenu.classList.remove('is-open');
+      document.body.style.overflow = '';
     };
 
-    // Replace element to purge previous listeners on View Transitions
-    const newToggleBtn = toggleBtn.cloneNode(true);
-    toggleBtn.parentNode?.replaceChild(newToggleBtn, toggleBtn);
+    // Remove existing event listeners by replacing with fresh clone on init
+    const freshToggleBtn = toggleBtn.cloneNode(true) as HTMLElement;
+    toggleBtn.parentNode?.replaceChild(freshToggleBtn, toggleBtn);
 
-    newToggleBtn.addEventListener('click', toggleMenu);
+    freshToggleBtn.addEventListener('click', toggleMenu);
 
-    // Close on Escape key press
+    // Close on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeMenu();
     });
 
-    // Close when clicking any nav link
+    // Close menu when clicking nav links
     const links = navMenu.querySelectorAll('.nav-item');
-    links.forEach(link => link.addEventListener('click', closeMenu));
+    links.forEach(link => {
+      link.addEventListener('click', closeMenu);
+    });
   }
 
-  // astro:page-load handles both initial load and View Transitions automatically
-  document.addEventListener('astro:page-load', setupNav);
+  // Dual initialization: covers initial page load and View Transitions
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNavigation);
+  } else {
+    initNavigation();
+  }
+
+  document.addEventListener('astro:page-load', initNavigation);
 </script>
 
 <style>
@@ -79,7 +96,7 @@ const navItems = [
     width: 100%;
     position: sticky;
     top: 0;
-    z-index: 50;
+    z-index: 100;
   }
 
   .nav-container {
@@ -89,6 +106,7 @@ const navItems = [
     justify-content: space-between;
     align-items: center;
     padding: 1rem 1.5rem;
+    position: relative;
   }
 
   .logo {
@@ -96,52 +114,19 @@ const navItems = [
     font-weight: 500;
     color: #fff;
     text-decoration: none;
+    z-index: 101;
   }
 
-  /* Mobile menu default (hidden) */
-  .nav-links {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background-color: #1a1a1a;
-    border-bottom: 1px solid #2a2a2a;
-  }
-
-  .nav-links.is-open {
-    display: block;
-  }
-
-  .nav-links ul {
-    list-style: none;
-    margin: 0;
-    padding: 1rem 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .nav-links a {
-    color: #fff;
-    text-decoration: none;
-    padding: 0.75rem 1.5rem;
-    display: block;
-    transition: opacity 0.2s;
-  }
-
-  .nav-links a:hover {
-    opacity: 0.7;
-  }
-
-  /* Hamburger Icon Styling */
+  /* Hamburger Icon Base */
   #menu-toggle {
-    background: none;
+    background: transparent;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 101;
   }
 
   .hamburger, 
@@ -151,7 +136,9 @@ const navItems = [
     width: 22px;
     height: 2px;
     background-color: #fff;
-    transition: transform 0.2s ease, background-color 0.2s ease, top 0.2s ease;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                top 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .hamburger {
@@ -165,10 +152,10 @@ const navItems = [
     left: 0;
   }
 
-  .hamburger::before { top: -6px; }
-  .hamburger::after { top: 6px; }
+  .hamburger::before { top: -7px; }
+  .hamburger::after { top: 7px; }
 
-  /* Morph to 'X' when menu is expanded */
+  /* Morph to 'X' animation */
   #menu-toggle[aria-expanded="true"] .hamburger {
     background-color: transparent;
   }
@@ -183,7 +170,55 @@ const navItems = [
     transform: rotate(-45deg);
   }
 
-  /* Desktop View Breakpoint */
+  /* Mobile Nav Drawer Overlay */
+  @media (max-width: 767px) {
+    .nav-links {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #1a1a1a;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 100;
+    }
+
+    .nav-links.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .nav-links ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .nav-links a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 1.5rem;
+      transition: opacity 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      opacity: 0.7;
+    }
+  }
+
+  /* Desktop Navigation Layout */
   @media (min-width: 768px) {
     #menu-toggle {
       display: none;
@@ -193,17 +228,33 @@ const navItems = [
       display: flex !important;
       position: static;
       width: auto;
+      height: auto;
       background: transparent;
-      border-bottom: none;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     .nav-links ul {
-      flex-direction: row;
+      list-style: none;
+      margin: 0;
       padding: 0;
+      display: flex;
+      flex-direction: row;
+      gap: 0.5rem;
     }
 
     .nav-links a {
-      padding: 0 1rem;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.9375rem;
+      padding: 0.5rem 0.875rem;
+      display: block;
+      transition: opacity 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      opacity: 0.7;
     }
   }
 </style>

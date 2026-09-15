@@ -1,4 +1,5 @@
 ---
+/* src/pages/paintings.astro */
 import { getCollection } from 'astro:content';
 import { Image, getImage } from 'astro:assets';
 import PortfolioLayout from '../layouts/Layout.astro';
@@ -15,9 +16,17 @@ const galleryItems = await Promise.all(
       width: 2800,
       quality: 90,
     });
+
+    // Format robust URL for production static preview builds
+    const resolvedUrl = fullImage.src.startsWith('http') 
+      ? fullImage.src 
+      : fullImage.src.startsWith('/') 
+        ? fullImage.src 
+        : `/${fullImage.src}`;
+
     return {
       ...item,
-      lightboxUrl: fullImage.src,
+      lightboxUrl: resolvedUrl,
     };
   })
 );
@@ -109,7 +118,7 @@ const galleryItems = await Promise.all(
 
   .image-frame {
     position: relative;
-    cursor: zoom-in;
+    cursor: pointer;
     overflow: hidden;
     background-color: #121212;
     border-radius: 2px;

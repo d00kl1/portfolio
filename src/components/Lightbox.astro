@@ -1,10 +1,10 @@
 ---
-/* Lightbox.astro - Deep Zoom Viewer with Bottom Magnification Control */
+/* src/components/Lightbox.astro - Deep Zoom Viewer with Bottom Magnification Control */
 ---
 
 <dialog id="global-lightbox" class="lightbox-dialog" aria-label="Media viewer">
   <div class="lightbox-content">
-    <!-- Top Close Button -->
+    <!-- Close Button -->
     <button id="lightbox-close" class="nav-btn close-btn" aria-label="Close lightbox" type="button">
       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     </button>
@@ -15,7 +15,7 @@
     </button>
 
     <div class="lightbox-stage">
-      <!-- OpenSeadragon Mount Target -->
+      <!-- OpenSeadragon Viewer Target -->
       <div id="openseadragon-viewer" class="osd-container"></div>
       
       <!-- Bottom Control Bar & Caption -->
@@ -48,7 +48,7 @@
   </div>
 </dialog>
 
-<!-- OpenSeadragon Engine via CDN -->
+<!-- OpenSeadragon Library via CDN -->
 <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/openseadragon.min.js"></script>
 
 <style>
@@ -98,7 +98,6 @@
     background: transparent;
   }
 
-  /* Bottom Bar Overlay */
   .lightbox-bottom-bar {
     position: absolute;
     bottom: 1.25rem;
@@ -140,7 +139,6 @@
     margin: 0.2rem 0 0 0;
   }
 
-  /* Zoom Controls Container */
   .zoom-controls {
     display: flex;
     align-items: center;

@@ -17,16 +17,9 @@ const galleryItems = await Promise.all(
       quality: 90,
     });
 
-    // Format robust URL for production static preview builds
-    const resolvedUrl = fullImage.src.startsWith('http') 
-      ? fullImage.src 
-      : fullImage.src.startsWith('/') 
-        ? fullImage.src 
-        : `/${fullImage.src}`;
-
     return {
       ...item,
-      lightboxUrl: resolvedUrl,
+      lightboxUrl: fullImage.src,
     };
   })
 );
@@ -49,7 +42,7 @@ const galleryItems = await Promise.all(
             data-lightbox-meta={`${item.data.medium} • ${item.data.year}`}
             tabindex="0"
             role="button"
-            aria-label={`Enlarge and inspect ${item.data.title}`}
+            aria-label={`Enlarge ${item.data.title}`}
           >
             <Image 
               src={item.data.coverImage} 
@@ -86,7 +79,7 @@ const galleryItems = await Promise.all(
   }
 
   .gallery-header h1 {
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
     font-weight: 400;
     color: #ffffff;
     margin: 0;
@@ -123,6 +116,10 @@ const galleryItems = await Promise.all(
     background-color: #121212;
     border-radius: 2px;
     outline: none;
+    aspect-ratio: 4 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .image-frame:focus-visible {
@@ -132,13 +129,16 @@ const galleryItems = await Promise.all(
 
   .image-frame img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     display: block;
     transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
   }
 
-  .image-frame:hover img {
-    transform: scale(1.03);
+  @media (hover: hover) {
+    .image-frame:hover img {
+      transform: scale(1.03);
+    }
   }
 
   .art-details {
@@ -148,11 +148,13 @@ const galleryItems = await Promise.all(
   .art-details a {
     text-decoration: none;
     color: #ffffff;
+    display: inline-block;
   }
 
   .art-details h2 {
     font-size: 1rem;
     font-weight: 400;
+    line-height: 1.4;
     margin: 0 0 0.25rem 0;
     transition: color 0.2s ease;
   }
@@ -165,5 +167,19 @@ const galleryItems = await Promise.all(
     font-size: 0.8125rem;
     color: #888888;
     margin: 0;
+  }
+
+  @media (max-width: 639px) {
+    .gallery-container {
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    .gallery-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .gallery-grid {
+      gap: 2rem 1rem;
+    }
   }
 </style>

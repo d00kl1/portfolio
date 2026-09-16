@@ -42,7 +42,7 @@ const pageImages = Object.keys(allPages)
   .map((path) => allPages[path].default.src);
 ---
 
-<Layout title={`Reading ${title}`}>
+<Layout title={`Manga - ${title}`}>
   <main class="reader-container">
     {pageImages.length > 0 ? (
       <MangaReader pages={pageImages} title={title} />

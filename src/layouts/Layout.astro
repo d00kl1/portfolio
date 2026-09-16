@@ -30,13 +30,13 @@ const {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div class="site-shell">
-      <Navigation />
-      <main id="main-content" class="page-content">
-        <slot />
-      </main>
-      <Footer />
-    </div>
+    <div class="site-shell flex flex-col h-screen w-screen overflow-hidden">
+  <Navigation />
+  <main id="main-content" class="page-content flex-1 flex flex-col min-h-0 w-full overflow-hidden">
+    <slot />
+  </main>
+  <Footer />
+</div>
 
     <!-- Global Design System -->
     <style is:global>

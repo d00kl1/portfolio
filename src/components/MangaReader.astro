@@ -9,37 +9,14 @@ const { title, pages } = Astro.props;
 
 <div 
   id="manga-reader" 
-  class="fixed inset-0 w-screen h-screen bg-neutral-950 text-white overflow-hidden select-none font-sans overscroll-none touch-none"
+  class="relative w-full h-full flex-1 flex flex-col min-h-0 bg-neutral-950 text-white select-none overflow-hidden"
 >
   
   <!-- Viewport Stage -->
-  <main id="reader-stage" class="absolute inset-0 z-0 w-full h-full flex items-center justify-center p-3 md:p-8 cursor-pointer overflow-hidden">
+  <main id="reader-stage" class="relative flex-1 w-full min-h-0 z-0 w-full h-full flex items-center justify-center p-3 md:p-8 cursor-pointer overflow-hidden">
     <!-- Dynamic Container (Rendered Inline to Prevent Scope Collisions) -->
-    <div id="page-container"></div>
-
-    <!-- Side Tap Zones -->
-    <div id="prev-zone" class="absolute inset-y-0 left-0 w-[30%] z-10" title="Previous Page"></div>
-    <div id="next-zone" class="absolute inset-y-0 right-0 w-[30%] z-10" title="Next Page"></div>
-  </main>
-
-  <!-- Bottom Control Bar (Floating Overlay) -->
-  <footer 
-    id="reader-footer" 
-    class="absolute bottom-0 left-0 right-0 z-30 px-4 md:px-6 py-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent transition-opacity duration-200"
-    style="padding-bottom: max(1rem, env(safe-area-inset-bottom));"
-  >
-    <div class="max-w-xl mx-auto flex items-center gap-3 md:gap-4">
-      <span id="page-indicator" class="text-[11px] md:text-xs font-mono text-neutral-300 w-20 text-right select-none">1 / {pages.length}</span>
-      <input 
-        type="range" 
-        id="page-slider" 
-        min="0" 
-        max={pages.length - 1} 
-        value="0"
-        class="w-full accent-red-600 h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer" 
-      />
-    </div>
-  </footer>
+    <div id="page-container"></div>    
+  </main>  
 </div>
 
 <style>
@@ -197,18 +174,7 @@ const { title, pages } = Astro.props;
     } else if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
       toggleControls();
     }
-  }, { passive: true });
-
-  // Navigation Hotspots
-  document.getElementById('next-zone').addEventListener('click', (e) => {
-    e.stopPropagation();
-    isRTL ? prevPage() : nextPage();
-  });
-
-  document.getElementById('prev-zone').addEventListener('click', (e) => {
-    e.stopPropagation();
-    isRTL ? nextPage() : prevPage();
-  });
+  }, { passive: true });  
 
   // Keyboard Navigation
   window.addEventListener('keydown', (e) => {

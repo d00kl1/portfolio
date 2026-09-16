@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manga Reader UI</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #1a1a1a;
+      color: #222222;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* HEADER STYLES */
+    .reader-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 48px;
+      padding: 0 24px;
+      background-color: #e3e3e3;
+      border-top: 3px solid #ff0000;
+      border-bottom: 1px solid #d0d0d0;
+      flex-shrink: 0;
+    }
+
+    .reader-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #222222;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      user-select: none;
+    }
+
+    .reader-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      min-height: 20px;
+      color: #222222;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      outline: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      opacity: 0.6;
+    }
+
+    .icon-btn svg {
+      display: block;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+    }
+
+    /* CANVAS STAGE PLACEHOLDER */
+    .reader-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #111111;
+      color: #666666;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* FOOTER STYLES */
+    .reader-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 12px 24px;
+      background-color: #e3e3e3;
+      border-top: 1px solid #d0d0d0;
+      flex-shrink: 0;
+      gap: 16px;
+    }
+
+    .page-label {
+      font-size: 13px;
+      color: #888888;
+      font-weight: 500;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .slider-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Red Badge Tooltip */
+    .slider-tooltip {
+      position: absolute;
+      top: -28px;
+      transform: translateX(-50%);
+      background-color: #ff0000;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1;
+      padding: 6px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .range-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #cccccc;
+      border-radius: 3px;
+      outline: none;
+      margin: 8px 0;
+      cursor: pointer;
+    }
+
+    /* Webkit (Chrome/Safari) Thumb */
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ff0000;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* Firefox Thumb */
+    .range-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ff0000;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .page-indicator {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #222222;
+      font-weight: 500;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Bar -->
+  <header class="reader-header">
+    <div id="reader-title" class="reader-title">TEAR JERK</div>
+
+    <div class="reader-controls">
+      <button class="icon-btn" title="Help" aria-label="Help">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn" title="Layout Mode" aria-label="Layout Mode">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3 5v14h8V5H3zm10 0v14h8V5h-8z"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn" title="Zoom In" aria-label="Zoom In">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <line x1="11" y1="8" x2="11" y2="14"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn" title="Zoom Out" aria-label="Zoom Out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn" title="Open in New Tab" aria-label="Open in New Tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Canvas Stage Area -->
+  <main class="reader-stage">
+    [ Manga Pages Render Stage ]
+  </main>
+
+  <!-- Footer Bar -->
+  <footer class="reader-footer">
+    <span id="max-page-label" class="page-label"></span>
+
+    <div class="slider-wrapper">
+      <div id="slider-tooltip" class="slider-tooltip"></div>
+
+      <input 
+        type="range" 
+        id="page-slider" 
+        dir="rtl" 
+        class="range-slider"
+      />
+      <div id="page-indicator" class="page-indicator"></div>
+    </div>
+
+    <span id="min-page-label" class="page-label">Page 1</span>
+  </footer>
+
+  <!-- Interactivity Script -->
+  <script>
+    // Dynamic Configuration Variables
+    const chapterTitle = "TEAR JERK"; // <-- CHANGE TITLE HERE
+    const totalPages = 25;             // <-- CHANGE TOTAL PAGES HERE
+    const initialPage = 1;
+
+    const titleElement = document.getElementById('reader-title');
+    const slider = document.getElementById('page-slider');
+    const tooltip = document.getElementById('slider-tooltip');
+    const indicator = document.getElementById('page-indicator');
+    const maxPageLabel = document.getElementById('max-page-label');
+
+    // Initialize Header Title
+    titleElement.innerText = chapterTitle;
+
+    // Initialize Dynamic Page Count Elements
+    slider.min = 1;
+    slider.max = totalPages;
+    slider.value = Math.min(initialPage, totalPages);
+    maxPageLabel.innerText = `Page ${totalPages}`;
+
+    function updateSliderUI() {
+      const min = parseInt(slider.min, 10) || 1;
+      const max = parseInt(slider.max, 10) || totalPages;
+      const val = parseInt(slider.value, 10);
+      const isDoubleSpread = true;
+
+      // Update badge number
+      tooltip.innerText = val;
+
+      // Update spread page indicator
+      if (isDoubleSpread && val > min) {
+        indicator.innerText = `Pages: ${val - 1} - ${val}`;
+      } else {
+        indicator.innerText = `Page: ${val}`;
+      }
+
+      // Calculate RTL thumb position for tooltip placement
+      const percent = (val - min) / (max - min);
+      const sliderWidth = slider.getBoundingClientRect().width;
+      const thumbWidth = 18;
+
+      let thumbPos = percent * (sliderWidth - thumbWidth) + (thumbWidth / 2);
+
+      if (slider.dir === 'rtl') {
+        thumbPos = sliderWidth - thumbPos;
+      }
+
+      tooltip.style.left = `${thumbPos}px`;
+    }
+
+    slider.addEventListener('input', updateSliderUI);
+    window.addEventListener('resize', updateSliderUI);
+
+    // Initial setup render
+    updateSliderUI();
+  </script>
+</body>
+</html>

@@ -1,7 +1,8 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection} from 'astro:content';
+import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 
-const paintings = defineCollection({
+const paintingsCollection = defineCollection({
   // 1. Define the loader pointing to your markdown files inside src/content/paintings/
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/paintings' }),
   
@@ -17,4 +18,16 @@ const paintings = defineCollection({
     }),
 });
 
-export const collections = { paintings };
+const mangaCollection = defineCollection({
+  loader: glob({ pattern: '**/index.md', base: './src/content/manga' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    slug: z.string().optional(),
+  }),
+});
+
+export const collections = {
+  paintings: paintingsCollection,
+  manga: mangaCollection,
+};

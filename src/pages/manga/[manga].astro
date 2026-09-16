@@ -1,0 +1,66 @@
+---
+// src/pages/manga/[manga].astro
+import { getCollection } from 'astro:content';
+import MangaReader from '../../components/MangaReader.astro';
+import Layout from '../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+  const mangaEntries = await getCollection('manga');
+
+  return mangaEntries.map((entry) => {
+    // entry.id is "tear-jerk/index.md" -> folderName becomes "tear-jerk"
+    const folderName = entry.id.split('/')[0];
+    const slug = entry.data?.slug || folderName;
+
+    return {
+      params: { manga: slug },
+      props: { entry, folderName },
+    };
+  });
+}
+
+const { entry, folderName } = Astro.props;
+
+if (!entry || !entry.data) {
+  return Astro.redirect('/404');
+}
+
+const { title } = entry.data;
+
+// Glob all images dynamically
+const allPages = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/content/manga/*/*.png',
+  { eager: true }
+);
+
+const targetPath = `/src/content/manga/${folderName}/`.toLowerCase();
+
+// Sort images numerically
+const pageImages = Object.keys(allPages)
+  .filter((path) => path.toLowerCase().includes(targetPath))
+  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+  .map((path) => allPages[path].default.src);
+---
+
+<Layout title={`Reading ${title}`}>
+  <main class="reader-container">
+    {pageImages.length > 0 ? (
+      <MangaReader pages={pageImages} title={title} />
+    ) : (
+      <p class="error-msg">No pages found for {title}.</p>
+    )}
+  </main>
+</Layout>
+
+<style>
+  .reader-container {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #121212;
+  }
+  .error-msg {
+    color: #fff;
+    padding: 2rem;
+    text-align: center;
+  }
+</style>

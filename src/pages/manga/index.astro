@@ -1,0 +1,134 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import Layout from '../../layouts/Layout.astro';
+
+const rawEntries = await getCollection('manga');
+const mangaEntries = (rawEntries || []).filter((entry) => entry && entry.data);
+
+const allPages = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/content/manga/*/*.png',
+  { eager: true }
+);
+
+const mangaList = mangaEntries.map((entry) => {
+  const folderName = entry.id ? entry.id.split('/')[0] : '';
+  const slug = entry.data?.slug || folderName;
+
+  const targetPath = `/src/content/manga/${folderName}/`.toLowerCase();
+  const sortedImages = Object.keys(allPages)
+    .filter((path) => path.toLowerCase().includes(targetPath))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+  const coverImage = sortedImages.length > 0 ? allPages[sortedImages[0]].default : null;
+
+  return {
+    slug,
+    title: entry.data?.title || 'Untitled',
+    description: entry.data?.description || '',
+    coverImage,
+  };
+});
+---
+
+<Layout title="Manga Gallery">
+  <main class="manga-gallery">
+    <h1>Manga Collection</h1>
+
+    {mangaList.length > 0 ? (
+      <div class="grid">
+        {mangaList.map((item) => (
+          <a href={`/manga/${item.slug}`} class="manga-card">
+            <div class="cover-wrapper">
+              {item.coverImage ? (
+                <Image 
+                  src={item.coverImage} 
+                  alt={`Cover art for ${item.title}`} 
+                  width={400}
+                  height={533}
+                  format="webp"
+                />
+              ) : (
+                <div class="no-cover">No Cover</div>
+              )}
+            </div>
+            <div class="info">
+              <h2>{item.title}</h2>
+              {item.description && <p>{item.description}</p>}
+            </div>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p>No manga found in collection.</p>
+    )}
+  </main>
+</Layout>
+
+<style>
+  .manga-gallery {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    color: #fff;
+  }
+
+  h1 { font-size: 2rem; margin-bottom: 2rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .manga-card {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .manga-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .cover-wrapper {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background-color: #242424;
+    overflow: hidden;
+  }
+
+  .cover-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .no-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .info { padding: 1rem; }
+  .info h2 { font-size: 1.1rem; margin: 0 0 0.5rem 0; }
+  .info p {
+    font-size: 0.85rem;
+    color: #aaa;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+</style>

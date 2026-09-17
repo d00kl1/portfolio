@@ -1,0 +1,275 @@
+---
+// Visualizer.astro
+// A WebGL Ping-Pong Feedback Visualizer using the Web Audio API
+---
+
+<div class="visualizer-container">
+  <div class="ui-layer">
+    <label for="audio-upload" class="upload-btn">Select Audio File</label>
+    <input type="file" id="audio-upload" accept="audio/*" />
+    <audio id="audio-player" controls></audio>
+  </div>
+  <canvas id="glcanvas"></canvas>
+</div>
+
+<style>
+  .visualizer-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    overflow: hidden;
+  }
+  #glcanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .ui-layer {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    border-radius: 8px;
+    color: white;
+    font-family: sans-serif;
+  }
+  #audio-upload {
+    display: none;
+  }
+  .upload-btn {
+    background: #ff0055;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+  }
+  .upload-btn:hover {
+    background: #ff3377;
+  }
+</style>
+
+<script>
+  // ==========================================
+  // 1. AUDIO SETUP (Bypassing CORS via File API)
+  // ==========================================
+  const audioInput = document.getElementById('audio-upload') as HTMLInputElement;
+  const audioEl = document.getElementById('audio-player') as HTMLAudioElement;
+  
+  let audioCtx: AudioContext;
+  let analyser: AnalyserNode;
+  let dataArray: Uint8Array;
+
+  audioInput.addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    // Use object URL to avoid CORS/local file restrictions
+    const objectUrl = URL.createObjectURL(file);
+    audioEl.src = objectUrl;
+    audioEl.play();
+
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      
+      const source = audioCtx.createMediaElementSource(audioEl);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+    }
+  });
+
+  // ==========================================
+  // 2. WEBGL SETUP & SHADERS
+  // ==========================================
+  const canvas = document.getElementById('glcanvas') as HTMLCanvasElement;
+  const gl = canvas.getContext('webgl');
+
+  if (!gl) {
+    console.error("WebGL not supported");
+  }
+
+  // Resize canvas to match screen
+  const resize = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+  };
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Fullscreen quad vertex shader
+  const vsSource = `
+    attribute vec2 a_position;
+    varying vec2 v_uv;
+    void main() {
+      v_uv = a_position * 0.5 + 0.5; // Map -1..1 to 0..1
+      gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+  `;
+
+  // Fragment Shader: Milkdrop-style Feedback & Audio Reactivity
+  const fsSource = `
+    precision mediump float;
+    varying vec2 v_uv;
+    
+    uniform sampler2D u_feedback;
+    uniform float u_audio; // Bass frequency data
+    uniform float u_time;
+    
+    void main() {
+      // 1. Transform UVs for the feedback warp (Zoom & slight rotation)
+      vec2 center = vec2(0.5, 0.5);
+      vec2 uv = v_uv - center;
+      
+      // Zoom out slightly
+      uv *= 0.98;
+      
+      // Rotate based on time and audio
+      float angle = sin(u_time * 0.5) * 0.02 * (1.0 + u_audio);
+      float s = sin(angle);
+      float c = cos(angle);
+      mat2 rot = mat2(c, -s, s, c);
+      uv = rot * uv;
+      uv += center;
+      
+      // 2. Sample previous frame (Ping-pong feedback)
+      vec4 prevFrame = texture2D(u_feedback, uv);
+      
+      // 3. Generate new geometry (Audio reactive pulsing ring)
+      float dist = distance(v_uv, center);
+      float ringSize = 0.2 + (u_audio * 0.3);
+      float ringThickness = 0.02 + (u_audio * 0.05);
+      float circle = smoothstep(ringSize + ringThickness, ringSize, dist) - 
+                     smoothstep(ringSize, ringSize - ringThickness, dist);
+                     
+      // 4. Dynamic colors shifting over time
+      vec3 color = vec3(
+        0.5 + 0.5 * sin(u_time + v_uv.x * 5.0),
+        0.5 + 0.5 * cos(u_time * 1.2 + v_uv.y * 5.0),
+        u_audio
+      );
+      
+      vec4 newFrame = vec4(color * circle, 1.0);
+      
+      // 5. Composite: Decay previous frame and add new geometry
+      gl_FragColor = mix(prevFrame, newFrame, 0.1) + (newFrame * 0.5);
+      
+      // Prevent color blowout over infinite feedback loops
+      gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);
+    }
+  `;
+
+  // Shader compilation helper
+  function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+    const shader = gl.createShader(type)!;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+    }
+    return shader;
+  }
+
+  const program = gl!.createProgram()!;
+  gl!.attachShader(program, createShader(gl!, gl!.VERTEX_SHADER, vsSource));
+  gl!.attachShader(program, createShader(gl!, gl!.FRAGMENT_SHADER, fsSource));
+  gl!.linkProgram(program);
+  gl!.useProgram(program);
+
+  // Buffer for full-screen quad
+  const positionBuffer = gl!.createBuffer();
+  gl!.bindBuffer(gl!.ARRAY_BUFFER, positionBuffer);
+  gl!.bufferData(gl!.ARRAY_BUFFER, new Float32Array([
+    -1, -1,  1, -1, -1,  1,
+    -1,  1,  1, -1,  1,  1
+  ]), gl!.STATIC_DRAW);
+
+  const positionLoc = gl!.getAttribLocation(program, 'a_position');
+  gl!.enableVertexAttribArray(positionLoc);
+  gl!.vertexAttribPointer(positionLoc, 2, gl!.FLOAT, false, 0, 0);
+
+  // Uniform locations
+  const feedbackLoc = gl!.getUniformLocation(program, 'u_feedback');
+  const audioLoc = gl!.getUniformLocation(program, 'u_audio');
+  const timeLoc = gl!.getUniformLocation(program, 'u_time');
+
+  // ==========================================
+  // 3. PING-PONG FRAMEBUFFERS
+  // ==========================================
+  // Create two textures and two framebuffers for the feedback loop
+  function createFramebufferTexture() {
+    const texture = gl!.createTexture();
+    gl!.bindTexture(gl!.TEXTURE_2D, texture);
+    gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, canvas.width, canvas.height, 0, gl!.RGBA, gl!.UNSIGNED_BYTE, null);
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR);
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
+
+    const fbo = gl!.createFramebuffer();
+    gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbo);
+    gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.COLOR_ATTACHMENT0, gl!.TEXTURE_2D, texture, 0);
+    return { texture, fbo };
+  }
+
+  let fbA = createFramebufferTexture();
+  let fbB = createFramebufferTexture();
+
+  // Recreate buffers on resize
+  window.addEventListener('resize', () => {
+    fbA = createFramebufferTexture();
+    fbB = createFramebufferTexture();
+  });
+
+  // ==========================================
+  // 4. RENDER LOOP
+  // ==========================================
+  let startTime = performance.now();
+
+  function render(time: number) {
+    requestAnimationFrame(render);
+
+    // 1. Get Audio Data (Calculate average bass)
+    let audioValue = 0;
+    if (analyser && dataArray) {
+      analyser.getByteFrequencyData(dataArray);
+      // Sample lower frequencies for the "beat"
+      let sum = 0;
+      for (let i = 0; i < 10; i++) sum += dataArray[i];
+      audioValue = (sum / 10) / 255.0; // Normalize 0 to 1
+    }
+
+    // 2. Set Uniforms
+    gl!.uniform1f(audioLoc, audioValue);
+    gl!.uniform1f(timeLoc, (time - startTime) * 0.001);
+
+    // 3. Draw to Offscreen Buffer B (using Buffer A as feedback texture)
+    gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbB.fbo);
+    gl!.activeTexture(gl!.TEXTURE0);
+    gl!.bindTexture(gl!.TEXTURE_2D, fbA.texture);
+    gl!.uniform1i(feedbackLoc, 0);
+    gl!.drawArrays(gl!.TRIANGLES, 0, 6);
+
+    // 4. Draw Offscreen Buffer B to the Main Canvas
+    gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
+    gl!.bindTexture(gl!.TEXTURE_2D, fbB.texture);
+    gl!.drawArrays(gl!.TRIANGLES, 0, 6);
+
+    // 5. Swap Buffers (Ping-Pong)
+    const temp = fbA;
+    fbA = fbB;
+    fbB = temp;
+  }
+
+  requestAnimationFrame(render);
+</script>

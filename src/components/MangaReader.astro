@@ -1,4 +1,16 @@
 ---
+import { 
+  CircleQuestionMark, 
+  X, 
+  Square, 
+  Columns2, 
+  ZoomIn, 
+  ZoomOut, 
+  Maximize,
+  ArrowLeft,
+  ArrowRight
+} from '@lucide/astro';
+
 interface Props {
   title: string;  
   pages: string[];
@@ -15,10 +27,7 @@ const { title, pages } = Astro.props;
   <div id="help-modal" class="help-modal-backdrop hidden">
     <div class="help-modal-card">
       <button id="close-help-btn" class="help-close-btn" aria-label="Close Help">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
+        <X class="w-6 h-6" />
       </button>
 
       <h2 class="help-title">MANGA READER HELP</h2>
@@ -27,8 +36,8 @@ const { title, pages } = Astro.props;
         <!-- Arrow Keys -->
         <div class="help-row">
           <div class="help-icon-group">
-            <span class="kbd-btn">◄</span>
-            <span class="kbd-btn">►</span>
+            <span class="kbd-btn"><ArrowLeft class="w-3.5 h-3.5" /></span>
+            <span class="kbd-btn"><ArrowRight class="w-3.5 h-3.5" /></span>
           </div>
           <div class="help-text">Use the left and right arrow keys to change pages.</div>
         </div>        
@@ -36,8 +45,8 @@ const { title, pages } = Astro.props;
         <!-- Layout Mode -->
         <div class="help-row">
           <div class="help-icon-group">
-            <svg class="help-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
-            <svg class="help-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5v14h8V5H3zm10 0v14h8V5h-8z"/></svg>
+            <Square class="help-svg" />
+            <Columns2 class="help-svg" />
           </div>
           <div class="help-text">
             <strong>Single-Page Mode / Double-Page Mode:</strong> Choose between displaying one page at a time or two.
@@ -47,8 +56,8 @@ const { title, pages } = Astro.props;
         <!-- Zoom -->
         <div class="help-row">
           <div class="help-icon-group">
-            <svg class="help-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-            <svg class="help-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            <ZoomIn class="help-svg" />
+            <ZoomOut class="help-svg" />
           </div>
           <div class="help-text">
             <strong>Zoom In / Zoom Out:</strong> Zoom in or out of the displayed page(s).
@@ -58,9 +67,7 @@ const { title, pages } = Astro.props;
         <!-- Fullscreen -->
         <div class="help-row">
           <div class="help-icon-group">
-            <svg class="help-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 2 2-2v-3M3 16v3a2 2 0 0 2 2-2h3"/>
-            </svg>
+            <Maximize class="help-svg" />
           </div>
           <div class="help-text">
             <strong>Fullscreen Mode:</strong> Enlarge the reader to edges of the screen. Press [ESC] to exit fullscreen mode.
@@ -76,40 +83,36 @@ const { title, pages } = Astro.props;
 
     <div class="reader-controls">
       <button id="help-btn" class="icon-btn" title="Help" aria-label="Help">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
-        </svg>
+        <CircleQuestionMark />
       </button>
 
-      <button id="toggle-spread" class="icon-btn" title="Layout Mode" aria-label="Layout Mode">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M3 5v14h8V5H3zm10 0v14h8V5h-8z"/>
-        </svg>
+      <!-- Layout Mode Toggle -->
+      <button 
+        id="toggle-spread" 
+        class="icon-btn" 
+        title="Switch to Single-Page Mode" 
+        aria-label="Switch to Single-Page Mode"
+      >
+        <span id="icon-single" class="icon-wrapper" style="display: none;">
+          <Square />
+        </span>
+        <span id="icon-double" class="icon-wrapper" style="display: flex;">
+          <Columns2 />
+        </span>
       </button>
 
       <!-- Zoom In Button -->
       <button id="zoom-in" class="icon-btn" title="Zoom In" aria-label="Zoom In">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="7"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          <line x1="11" y1="8" x2="11" y2="14"/>
-          <line x1="8" y1="11" x2="14" y2="11"/>
-        </svg>
+        <ZoomIn />
       </button>
 
       <!-- Zoom Out Button -->
       <button id="zoom-out" class="icon-btn" title="Zoom Out" aria-label="Zoom Out">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="7"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          <line x1="8" y1="11" x2="14" y2="11"/>
-        </svg>
+        <ZoomOut />
       </button>
 
       <button id="toggle-fullscreen" class="icon-btn" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 2 2-2v-3M3 16v3a2 2 0 0 2 2-2h3"/>
-        </svg>
+        <Maximize />
       </button>      
     </div>
   </header>
@@ -261,11 +264,19 @@ const { title, pages } = Astro.props;
     cursor: not-allowed;
   }
 
-  .icon-btn svg {
+  .icon-btn svg,
+  .icon-wrapper svg {
     display: block;
     width: 20px;
     height: 20px;
     pointer-events: none;
+  }
+
+  .icon-wrapper {
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
 
   /* FOOTER STYLES */
@@ -445,7 +456,6 @@ const { title, pages } = Astro.props;
   .kbd-btn {
     background-color: #1a1a1a;
     color: #ffffff;
-    font-size: 11px;
     width: 20px;
     height: 20px;
     border-radius: 2px;
@@ -575,6 +585,28 @@ const { title, pages } = Astro.props;
     updateTransform(false);
   }
 
+  function updateLayoutModeUI() {
+    const spreadBtn = document.getElementById('toggle-spread');
+    const iconSingle = document.getElementById('icon-single');
+    const iconDouble = document.getElementById('icon-double');
+
+    if (!spreadBtn || !iconSingle || !iconDouble) return;
+
+    if (isDoubleSpread) {
+      // 2 pages shown -> Show single page icon (action to switch to single-page)
+      iconSingle.style.display = 'flex';
+      iconDouble.style.display = 'none';
+      spreadBtn.title = 'Switch to Single-Page Mode';
+      spreadBtn.setAttribute('aria-label', 'Switch to Single-Page Mode');
+    } else {
+      // 1 page shown -> Show double page icon (action to switch to double-page)
+      iconSingle.style.display = 'none';
+      iconDouble.style.display = 'flex';
+      spreadBtn.title = 'Switch to Double-Page Mode';
+      spreadBtn.setAttribute('aria-label', 'Switch to Double-Page Mode');
+    }
+  }
+
   window.addEventListener('resize', () => {
     isMobile = window.innerWidth < 768;
     if (isMobile) isDoubleSpread = false;
@@ -585,6 +617,7 @@ const { title, pages } = Astro.props;
       resetZoom();
       renderPages();
     }
+    updateLayoutModeUI();
   });
 
   if (zoomInBtn) zoomInBtn.addEventListener('click', zoomIn);
@@ -825,6 +858,7 @@ const { title, pages } = Astro.props;
       isDoubleSpread = !isDoubleSpread;
       resetZoom();
       renderPages();
+      updateLayoutModeUI();
     });
   }
 
@@ -864,5 +898,7 @@ const { title, pages } = Astro.props;
     renderPages();
   });
 
+  // Initial render
   renderPages();
+  updateLayoutModeUI();
 </script>

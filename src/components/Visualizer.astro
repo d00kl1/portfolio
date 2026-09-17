@@ -77,7 +77,6 @@
 </style>
 
 <script>
-  // Expose an initializer function to connect external analyser nodes from the playlist page
   let currentAnalyser: AnalyserNode | null = null;
   let dataArray: Uint8Array | null = null;
 
@@ -85,6 +84,14 @@
     currentAnalyser = analyser;
     dataArray = new Uint8Array(currentAnalyser.frequencyBinCount);
   };
+
+  // Keyboard shortcut: Press ESC to exit visualizer
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const overlay = document.getElementById('visualizer-overlay');
+      overlay?.classList.remove('active');
+    }
+  });
 
   // ==========================================
   // WEBGL SETUP & SHADERS

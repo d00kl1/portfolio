@@ -1,11 +1,399 @@
 ---
+/* src/pages/music.astro */
+import { getCollection } from 'astro:content';
 import PortfolioLayout from '../layouts/Layout.astro';
 import Visualizer from '../components/Visualizer.astro';
+
+const audioFiles = import.meta.glob<{ default: string }>('/src/content/music/*.wav', {
+  eager: true,
+  query: '?url',
+});
+
+const tracks = await getCollection('music');
+const sortedTracks = tracks.sort((a, b) => b.data.year - a.data.year);
+
+const playlistItems = sortedTracks.map((item) => {
+  const wavPath = `/src/content/music/${item.id}.wav`;
+  const audioUrl = audioFiles[wavPath]?.default || '';
+
+  return {
+    ...item,
+    audioUrl,
+  };
+});
 ---
 
 <PortfolioLayout title="Music — Harikrishnan Varma">
-  <main class="visualizer-container">
-    <Visualizer />
+  <main class="playlist-container">
+    <header class="playlist-header">
+      <h1>Music</h1>
+      <button id="toggle-visualizer-btn" class="visualizer-toggle-btn">
+        Visualizer
+      </button>
+    </header>
+
+    <div class="playlist" role="table" aria-label="Audio Tracks">
+      <div class="playlist-head" role="row">
+        <span class="col-num" role="columnheader">#</span>
+        <span class="col-title" role="columnheader">Title</span>
+        <span class="col-year" role="columnheader">Year</span>
+        <span class="col-action" role="columnheader"></span>
+      </div>
+
+      <div class="playlist-body" role="rowgroup">
+        {playlistItems.map((item, index) => (
+          <div class="track-row" role="row">
+            <div class="track-main">
+              <span class="col-num" role="cell">
+                <span class="num">{(index + 1).toString().padStart(2, '0')}</span>
+              </span>
+              
+              <div class="col-title" role="cell">
+                <a href={`/music/${item.id}`} class="title-link">{item.data.title}</a>
+              </div>
+              
+              <span class="col-year" role="cell">{item.data.year}</span>
+              
+              <div class="col-action" role="cell">
+                <button 
+                  class="expand-play-btn" 
+                  aria-label={`Play ${item.data.title}`}
+                >
+                  <span class="play-icon">▶</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="track-player-drawer">
+              <audio 
+                class="row-audio" 
+                src={item.audioUrl} 
+                controls 
+                controlsList="nodownload"
+                oncontextmenu="return false;"
+                preload="none"
+              ></audio>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   </main>
+
+  <Visualizer />
 </PortfolioLayout>
 
+<script>
+  let audioCtx: AudioContext | null = null;
+  let analyser: AnalyserNode | null = null;
+  const connectedElements = new WeakSet<HTMLAudioElement>();
+
+  const trackRows = document.querySelectorAll<HTMLElement>('.track-row');
+
+  trackRows.forEach((row) => {
+    const playBtn = row.querySelector<HTMLButtonElement>('.expand-play-btn');
+    const audio = row.querySelector<HTMLAudioElement>('.row-audio');
+
+    if (!playBtn || !audio) return;
+
+    // Set up Web Audio API connection to visualizer on first play interaction
+    const setupAudioContext = () => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.connect(audioCtx.destination);
+
+        if ((window as any).initVisualizerAudio) {
+          (window as any).initVisualizerAudio(analyser);
+        }
+      }
+
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      if (!connectedElements.has(audio)) {
+        try {
+          const source = audioCtx.createMediaElementSource(audio);
+          source.connect(analyser!);
+          connectedElements.add(audio);
+        } catch (e) {
+          console.error("Audio node connection error:", e);
+        }
+      }
+    };
+
+    playBtn.addEventListener('click', () => {
+      setupAudioContext();
+      const isExpanded = row.classList.contains('expanded');
+
+      trackRows.forEach((otherRow) => {
+        if (otherRow !== row) {
+          otherRow.classList.remove('expanded', 'playing');
+          const otherAudio = otherRow.querySelector<HTMLAudioElement>('.row-audio');
+          if (otherAudio) {
+            otherAudio.pause();
+            otherAudio.currentTime = 0;
+          }
+        }
+      });
+
+      if (!isExpanded) {
+        row.classList.add('expanded', 'playing');
+        audio.play();
+      } else {
+        if (audio.paused) {
+          audio.play();
+          row.classList.add('playing');
+        } else {
+          audio.pause();
+          row.classList.remove('playing');
+        }
+      }
+    });
+
+    audio.addEventListener('play', () => {
+      setupAudioContext();
+      row.classList.add('playing');
+    });
+
+    audio.addEventListener('pause', () => {
+      if (audio.currentTime === 0 || audio.paused) {
+        row.classList.remove('playing');
+      }
+    });
+
+    audio.addEventListener('ended', () => {
+      row.classList.remove('expanded', 'playing');
+      audio.currentTime = 0;
+
+      const nextRow = row.nextElementSibling as HTMLElement | null;
+      if (nextRow) {
+        const nextBtn = nextRow.querySelector<HTMLButtonElement>('.expand-play-btn');
+        nextBtn?.click();
+      }
+    });
+  });
+
+  // Visualizer Show/Hide Toggle Logic
+  const toggleBtn = document.getElementById('toggle-visualizer-btn');
+  const visualizerOverlay = document.getElementById('visualizer-overlay');
+  const closeBtn = document.getElementById('close-visualizer-btn');
+
+  toggleBtn?.addEventListener('click', () => {
+    visualizerOverlay?.classList.add('active');
+  });
+
+  closeBtn?.addEventListener('click', () => {
+    visualizerOverlay?.classList.remove('active');
+  });
+</script>
+
+<style>
+  .playlist-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  .playlist-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 0;
+  }
+
+  .playlist-header h1 {
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    font-weight: 400;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .visualizer-toggle-btn {
+    background: #222222;
+    border: 1px solid #333333;
+    color: #ffffff;
+    padding: 0.4rem 0.85rem;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .visualizer-toggle-btn:hover {
+    background: #333333;
+    border-color: #555555;
+  }
+
+  .playlist {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.875rem;
+  }
+
+  .playlist-head {
+    display: grid;
+    grid-template-columns: 40px 1fr 80px 70px;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    color: #666666;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .playlist-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .track-row {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #141414;
+    background: transparent;
+    transition: background-color 0.15s ease;
+  }
+
+  .track-main {
+    display: grid;
+    grid-template-columns: 40px 1fr 80px 70px;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.75rem;
+    color: #cccccc;
+  }
+
+  .track-row:hover {
+    background-color: #161616;
+  }
+
+  .track-row.expanded {
+    background-color: #1a1a1a;
+  }
+
+  .col-num {
+    color: #555555;
+    font-size: 0.8125rem;
+  }
+
+  .col-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .title-link {
+    color: #666666;
+    text-decoration: none;
+    font-weight: 400;
+    transition: color 0.15s ease;
+  }
+
+  .title-link:hover {
+    color: #ffffff;
+  }
+
+  .col-year {
+    color: #666666;
+  }
+
+  .col-action {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .expand-play-btn {
+    background: #222222;
+    border: 1px solid #333333;
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .expand-play-btn:hover {
+    background: #333333;
+    border-color: #555555;
+  }
+
+  .track-row.playing .expand-play-btn {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+  }
+
+  .play-icon {
+    font-size: 0.65rem;
+  }
+
+  .track-player-drawer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+    padding: 0 0.75rem;
+  }
+
+  .track-row.expanded .track-player-drawer {
+    max-height: 80px;
+    padding: 0.25rem 0.75rem 0.875rem 0.75rem;
+  }
+
+  .row-audio {
+    width: 100%;
+    height: 32px;
+    border-radius: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .playlist-head {
+      display: none;
+    }
+
+    .track-main {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "title action"
+        "year action";
+      gap: 0.25rem 1rem;
+      padding: 0.75rem 0.5rem;
+    }
+
+    .col-num {
+      display: none;
+    }
+
+    .col-title {
+      grid-area: title;
+    }
+
+    .col-year {
+      grid-area: year;
+      font-size: 0.75rem;
+    }
+
+    .col-action {
+      grid-area: action;
+      align-self: center;
+    }
+
+    .track-player-drawer {
+      padding: 0 0.5rem;
+    }
+
+    .track-row.expanded .track-player-drawer {
+      padding: 0 0.5rem 0.75rem 0.5rem;
+    }
+  }
+</style>

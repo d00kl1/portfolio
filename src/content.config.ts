@@ -27,7 +27,17 @@ const mangaCollection = defineCollection({
   }),
 });
 
+const musicCollection = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/music' }),
+  schema: z.object({
+    title: z.string(),
+    year: z.number(),
+    genre: z.string().optional(),
+  }),
+});
+
 export const collections = {
   paintings: paintingsCollection,
   manga: mangaCollection,
+  music: musicCollection,
 };

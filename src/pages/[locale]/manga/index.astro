@@ -50,7 +50,7 @@ const mangaList = mangaEntries.map((entry) => {
     {mangaList.length > 0 ? (
       <div class="grid">
         {mangaList.map((item) => (
-          <a href={`/manga/${item.slug}`} class="manga-card">
+          <a href={`/${lang}/manga/${item.slug}`} class="manga-card">
             <div class="cover-wrapper">
               {item.coverImage ? (
                 <Image 

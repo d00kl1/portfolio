@@ -1,8 +1,20 @@
 ---
 /* src/pages/music.astro */
 import { getCollection } from 'astro:content';
-import PortfolioLayout from '../layouts/Layout.astro';
-import Visualizer from '../components/Visualizer.astro';
+import PortfolioLayout from '../../layouts/Layout.astro';
+import Visualizer from '../../components/Visualizer.astro';
+
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+export async function getStaticPaths() {
+  return [
+    { params: { locale: 'en' } },
+    { params: { locale: 'ml' } },
+  ];
+}
 
 const audioFiles = import.meta.glob<{ default: string }>('/src/content/music/*.wav', {
   eager: true,

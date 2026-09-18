@@ -1,22 +1,25 @@
 ---
 // src/pages/manga/[manga].astro
 import { getCollection } from 'astro:content';
-import MangaReader from '../../components/MangaReader.astro';
-import Layout from '../../layouts/Layout.astro';
+import MangaReader from '../../../components/MangaReader.astro';
+import Layout from '../../../layouts/Layout.astro';
 
 export async function getStaticPaths() {
   const mangaEntries = await getCollection('manga');
+  const locales = ['en', 'ml'];
 
-  return mangaEntries.map((entry) => {
-    // entry.id is "tear-jerk/index.md" -> folderName becomes "tear-jerk"
-    const folderName = entry.id.split('/')[0];
-    const slug = entry.data?.slug || folderName;
+  return locales.flatMap((locale) =>
+    mangaEntries.map((entry) => {
+      // entry.id is "tear-jerk/index.md" -> folderName becomes "tear-jerk"
+      const folderName = entry.id.split('/')[0];
+      const slug = entry.data?.slug || folderName;
 
-    return {
-      params: { manga: slug },
-      props: { entry, folderName },
-    };
-  });
+      return {
+        params: { locale, manga: slug },
+        props: { entry, folderName },
+      };
+    })
+  );
 }
 
 const { entry, folderName } = Astro.props;

@@ -1,6 +1,18 @@
 ---
 // src/pages/404.astro
-import PortfolioLayout from '../layouts/Layout.astro';
+import PortfolioLayout from '../../layouts/Layout.astro';
+
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+export async function getStaticPaths() {
+  return [
+    { params: { locale: 'en' } },
+    { params: { locale: 'ml' } },
+  ];
+}
 ---
 
 <PortfolioLayout title="404: Page Not Found — Harikrishnan Varma">

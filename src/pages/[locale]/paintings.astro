@@ -2,8 +2,20 @@
 /* src/pages/paintings.astro */
 import { getCollection } from 'astro:content';
 import { Image, getImage } from 'astro:assets';
-import PortfolioLayout from '../layouts/Layout.astro';
-import Lightbox from '../components/Lightbox.astro';
+import PortfolioLayout from '../../layouts/Layout.astro';
+import Lightbox from '../../components/Lightbox.astro';
+
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+export async function getStaticPaths() {
+  return [
+    { params: { locale: 'en' } },
+    { params: { locale: 'ml' } },
+  ];
+}
 
 const paintings = await getCollection('paintings');
 const sortedPaintings = paintings.sort((a, b) => b.data.year - a.data.year);

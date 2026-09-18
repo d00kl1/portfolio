@@ -1,0 +1,81 @@
+---
+// src/components/LanguagePicker.astro
+import { languages, type Locale } from '../i18n/ui';
+import { ChevronDown } from '@lucide/astro';
+
+const currentLocale = (Astro.params.locale as Locale) || 'en';
+const activeLang = languages[currentLocale] || languages.en;
+const pathname = Astro.url.pathname;
+
+function getLocalizedPath(targetLocale: string) {
+  const segments = pathname.split('/');
+  segments[1] = targetLocale;
+  return segments.join('/') || `/${targetLocale}/`;
+}
+---
+
+<details class="lang-picker relative inline-block text-left select-none">
+  <!-- Summary button: text first, dropdown arrow on the right -->
+  <summary 
+    class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-neutral-300 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded cursor-pointer list-none transition-colors"
+    aria-label="Select Language"
+  >
+    <span>{activeLang.short}</span>    
+  </summary>
+
+  <!-- Dropdown list: stacked language names -->
+  <div class="lang-dropdown absolute right-0 mt-1.5 w-36 py-1 bg-neutral-900 border border-neutral-700 rounded-md shadow-xl z-50 divide-y divide-neutral-800/50">
+    {Object.entries(languages).map(([code, lang]) => {
+      const isSelected = currentLocale === code;
+      return (
+        <a
+          href={getLocalizedPath(code)}
+          class:list={[
+            'lang-option px-3 py-2 text-sm transition-colors',
+            isSelected 
+              ? 'bg-neutral-800 text-white font-bold' 
+              : 'text-neutral-300 hover:bg-neutral-800/60 hover:text-white'
+          ]}
+        >
+          <span>{lang.name}</span>
+        </a>
+      );
+    })}
+  </div>
+</details>
+
+<style>
+  details summary::-webkit-details-marker,
+  details summary::marker {
+    display: none;
+  }
+
+  details[open] summary svg:last-child {
+    transform: rotate(180deg);
+  }
+
+  .lang-dropdown {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .lang-option {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+</style>
+
+<script>
+  document.addEventListener('click', (event) => {
+    const pickers = document.querySelectorAll('.lang-picker');
+    pickers.forEach((picker) => {
+      if (picker instanceof HTMLDetailsElement && picker.open) {
+        if (!picker.contains(event.target as Node)) {
+          picker.removeAttribute('open');
+        }
+      }
+    });
+  });
+</script>

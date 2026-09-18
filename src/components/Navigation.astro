@@ -1,4 +1,10 @@
 ---
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import LanguagePicker from '../components/LanguagePicker.astro';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
 interface NavItem {
   name: string;
   href: string;
@@ -6,37 +12,26 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Paintings", href: "/paintings" },
-  { name: "Drawings", href: "/drawings" },
+  { name: t('nav.paintings'), href: `/${lang}/paintings` },
+  { name: t('nav.drawings'), href: `/${lang}/drawings` },
   { 
-    name: "Manga", 
-    href: "/manga",
+    name: t('nav.manga'), 
+    href: `/${lang}/manga`,
     children: [
-      { name: "Tear Jerk", href: "/manga/tear-jerk" },
-      { name: "The Unfinishable One", href: "/manga/the-unfinishable-one" },
-      { name: "Enter Ish-Kish", href: "/manga/enter-ish-kish" },
+      { name: t('nav.tear-jerk'), href: `/${lang}/manga/tear-jerk` },
+      { name: t('nav.the-unfinishable-one'), href: `/${lang}/manga/the-unfinishable-one` },
+      { name: t('nav.enter-ish-kish'), href: `/${lang}/manga/enter-ish-kish` },
     ]
   },
-  { name: "Music", href: "/music" },
-  { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
+  { name: t('nav.music'), href: `/${lang}/music` },
+  { name: t('nav.about'), href: `/${lang}/about` },
+  { name: t('nav.contact'), href: `/${lang}/contact` },
 ];
 ---
 
 <header class="navbar">
   <div class="nav-container">
-    <a href="/" class="logo">Harikrishnan Varma</a>
-
-    <!-- Hamburger Toggle Button -->
-    <button 
-      id="menu-toggle" 
-      aria-label="Toggle Navigation" 
-      aria-controls="nav-menu"
-      aria-expanded="false"
-      type="button"
-    >
-      <span class="hamburger"></span>
-    </button>
+    <a href={`/${lang}/`} class="logo">{t('nav.description')}</a>
 
     <!-- Navigation Links -->
     <nav id="nav-menu" class="nav-links">
@@ -73,6 +68,21 @@ const navItems: NavItem[] = [
         ))}
       </ul>
     </nav>
+
+    <!-- Right Controls: Language Picker & Mobile Menu Toggle -->
+    <div class="nav-right">
+      <LanguagePicker />
+
+      <button 
+        id="menu-toggle" 
+        aria-label="Toggle Navigation" 
+        aria-controls="nav-menu"
+        aria-expanded="false"
+        type="button"
+      >
+        <span class="hamburger"></span>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -83,7 +93,6 @@ const navItems: NavItem[] = [
 
     if (!toggleBtn || !navMenu) return;
 
-    // Reset drawer state on init
     const closeMenu = () => {
       toggleBtn.setAttribute('aria-expanded', 'false');
       navMenu.classList.remove('is-open');
@@ -93,7 +102,6 @@ const navItems: NavItem[] = [
       navMenu.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('is-open'));
     };
 
-    // Clean event handlers using AbortController for View Transitions
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -109,18 +117,15 @@ const navItems: NavItem[] = [
       }
     }, { signal });
 
-    // Mobile Accordion Toggles
     const dropdownHeaders = navMenu.querySelectorAll('.dropdown-header');
     dropdownHeaders.forEach(header => {
-      header.addEventListener('click', (e) => {
-        // Only run accordion logic on mobile screens
+      header.addEventListener('click', () => {
         if (window.innerWidth >= 768) return;
 
         const btn = header.querySelector('.dropdown-toggle');
         const parentLi = header.closest('li');
         const subMenu = parentLi?.querySelector('.dropdown-menu');
         
-        // Toggle accordion when tapping row or button
         if (btn && subMenu) {
           const isExpanded = btn.getAttribute('aria-expanded') === 'true';
           btn.setAttribute('aria-expanded', (!isExpanded).toString());
@@ -129,18 +134,15 @@ const navItems: NavItem[] = [
       }, { signal });
     });
 
-    // Close menu on ESC
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeMenu();
     }, { signal });
 
-    // Close drawer when clicking links
     const links = navMenu.querySelectorAll('.nav-item');
     links.forEach(link => {
       link.addEventListener('click', closeMenu, { signal });
     });
 
-    // Cleanup listeners prior to next View Transition swap
     document.addEventListener('astro:before-swap', () => {
       controller.abort();
       document.body.style.overflow = '';
@@ -184,6 +186,13 @@ const navItems: NavItem[] = [
     z-index: 101;
   }
 
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 101;
+  }
+
   /* Hamburger Button */
   #menu-toggle {
     background: transparent;
@@ -193,7 +202,6 @@ const navItems: NavItem[] = [
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 101;
   }
 
   .hamburger, 
@@ -225,7 +233,7 @@ const navItems: NavItem[] = [
       top: 0;
       left: 0;
       width: 100vw;
-      height: 100dvh; /* Dynamic Viewport Height for mobile browsers */
+      height: 100dvh;
       background-color: #1a1a1a;
       flex-direction: column;
       padding: 6rem 2rem 3rem 2rem;
@@ -234,7 +242,7 @@ const navItems: NavItem[] = [
       pointer-events: none;
       transition: opacity 0.25s ease, visibility 0.25s ease;
       z-index: 100;
-      overflow-y: auto; /* Handles vertical scrolling if accordion overflows screen */
+      overflow-y: auto;
     }
 
     .nav-links.is-open {
@@ -325,6 +333,8 @@ const navItems: NavItem[] = [
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
+      margin-left: auto;
+      margin-right: 1.5rem;
     }
 
     .nav-links ul {
@@ -388,7 +398,6 @@ const navItems: NavItem[] = [
       gap: 0 !important;
     }
 
-    /* Invisible hover bridge prevents cursor gap dropouts */
     .dropdown-menu::before {
       content: '';
       position: absolute;

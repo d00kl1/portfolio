@@ -35,34 +35,76 @@ const t = useTranslations(lang);
       </li>
     </ul>
 
-    <form id="newsletter-form" class="subscribe-form">
-  <div>
-    <label for="name">Name</label>
-    <input type="text" id="name" name="name" placeholder="Your Name" />
-  </div>
+    <hr class="divider" />
 
-  <div>
-    <label for="email">Email *</label>
-    <input type="email" id="email" name="email" required placeholder="you@example.com" />
-  </div>
+    <section class="newsletter-section">
+      <h2>Newsletter</h2>
+      <p class="newsletter-intro">Subscribe to receive updates directly in your inbox.</p>
 
-  <button type="submit">Subscribe</button>
-  <p id="form-message" style="display: none;"></p>
-</form>
+      <form id="newsletter-form" class="subscribe-form">
+        <div class="form-group">
+          <label for="name" class="label">Name:</label>
+          <input type="text" id="name" name="name" placeholder="Your Name" />
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="label">Email *:</label>
+          <input type="email" id="email" name="email" required placeholder="you@example.com" />
+        </div>
+
+        <button type="submit" class="submit-btn">Subscribe</button>
+      </form>
+    </section>
+
+    <!-- Subscription Status Modal -->
+    <dialog id="status-modal" class="status-modal">
+      <div class="modal-content">
+        <p id="modal-message" class="modal-message">Submitting...</p>
+        <button id="modal-close-btn" class="modal-close-btn" style="display: none;">Close</button>
+      </div>
+    </dialog>
+  </main>
+</Layout>
 
 <script>
-  const form = document.getElementById('newsletter-form');
-  const messageEl = document.getElementById('form-message');
+  const form = document.getElementById('newsletter-form') as HTMLFormElement;
+  const modal = document.getElementById('status-modal') as HTMLDialogElement;
+  const modalMessage = document.getElementById('modal-message') as HTMLParagraphElement;
+  const modalCloseBtn = document.getElementById('modal-close-btn') as HTMLButtonElement;
 
-  form.addEventListener('submit', async (e) => {
+  const updateModal = (message: string, isFinished = false) => {
+    modalMessage.textContent = message;
+    modalCloseBtn.style.display = isFinished ? 'inline-block' : 'none';
+    if (!modal.open) {
+      modal.showModal();
+    }
+  };
+
+  modalCloseBtn.addEventListener('click', () => {
+    modal.close();
+  });
+
+  // Close modal when clicking the backdrop backdrop area
+  modal.addEventListener('click', (e) => {
+    const rect = modal.getBoundingClientRect();
+    const isInDialog = (
+      rect.top <= e.clientY &&
+      e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.left + rect.width
+    );
+    if (!isInDialog && modalCloseBtn.style.display !== 'none') {
+      modal.close();
+    }
+  });
+
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    messageEl.style.display = 'block';
-    messageEl.textContent = 'Submitting...';
+    updateModal('Submitting...', false);
 
     const payload = {
-      name: form.name.value,
-      email: form.email.value,
+      name: (form.querySelector('#name') as HTMLInputElement)?.value || '',
+      email: (form.querySelector('#email') as HTMLInputElement)?.value || '',
     };
 
     try {
@@ -75,20 +117,16 @@ const t = useTranslations(lang);
       const data = await res.json();
 
       if (res.ok) {
-        messageEl.textContent = data.message;
+        updateModal(data.message || 'Subscribed successfully!', true);
         form.reset();
       } else {
-        messageEl.textContent = data.message || 'Error subscribing.';
+        updateModal(data.message || 'Error subscribing. Please try again.', true);
       }
     } catch (err) {
-      messageEl.textContent = 'Network error. Please try again.';
+      updateModal('Network error. Please try again later.', true);
     }
   });
 </script>
-
-
-  </main>
-</Layout>
 
 <style>
   .contact-container {
@@ -103,7 +141,13 @@ const t = useTranslations(lang);
     margin-bottom: 0.5rem;
   }
 
-  .intro {
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .intro, .newsletter-intro {
     font-size: 1.1rem;
     color: #a3a3a3;
     margin-bottom: 2rem;
@@ -115,7 +159,7 @@ const t = useTranslations(lang);
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
   }
 
   .contact-list li {
@@ -125,10 +169,13 @@ const t = useTranslations(lang);
     font-size: 1.1rem;
   }
 
+  /* Universal Label Styling */
   .label {
     font-weight: 600;
     color: #e5e5e5;
     min-width: 90px;
+    display: inline-block;
+    font-size: 1rem;
   }
 
   .contact-list a {
@@ -140,5 +187,117 @@ const t = useTranslations(lang);
   .contact-list a:hover {
     opacity: 0.75;
     text-decoration: underline;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 2.5rem 0;
+  }
+
+  /* Form Styling */
+  .subscribe-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  @media (min-width: 480px) {
+    .form-group {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .subscribe-form input {
+    flex: 1;
+    background-color: #171717;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 0.65rem 0.85rem;
+    color: #f5f5f5;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .subscribe-form input:focus {
+    border-color: #ff0000;
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.2);
+  }
+
+  .submit-btn {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+    background-color: #ff0000;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+  }
+
+  .submit-btn:hover {
+    opacity: 0.9;
+  }
+
+  .submit-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* Status Modal */
+  .status-modal {
+    border: 1px solid #333;
+    border-radius: 10px;
+    background-color: #171717;
+    color: #f5f5f5;
+    padding: 1.75rem 2rem;
+    max-width: 400px;
+    width: 90%;
+    margin: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  }
+
+  .status-modal::backdrop {
+    background-color: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    text-align: center;
+  }
+
+  .modal-message {
+    font-size: 1.1rem;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .modal-close-btn {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .modal-close-btn:hover {
+    background-color: #444;
   }
 </style>

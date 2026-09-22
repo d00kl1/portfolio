@@ -21,7 +21,7 @@ export const ui = {
     'nav.music': 'Music',
     'nav.about': 'About',
     'nav.contact': 'Contact',
-    'contact.intro': 'A few ways to reach out:',
+    'contact.intro': 'A few ways...',
     'about.intro': "I'm Harikrishnan."
   },
   ml: {
@@ -36,7 +36,7 @@ export const ui = {
     'nav.music': 'സംഗീതം',
     'nav.about': 'എന്നെക്കുറിച്ച്',
     'nav.contact': 'ബന്ധപ്പെടുക',
-    'contact.intro': 'ബന്ധപ്പെടാനുള്ള വഴികൾ:',
+    'contact.intro': 'ബന്ധപ്പെടാനുള്ള വഴികൾ...',
     'about.intro': 'ഞാൻ ഹരികൃഷ്ണൻ.'
   },
 } as const;

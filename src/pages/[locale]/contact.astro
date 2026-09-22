@@ -34,6 +34,59 @@ const t = useTranslations(lang);
         </a>
       </li>
     </ul>
+
+    <form id="newsletter-form" class="subscribe-form">
+  <div>
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" placeholder="Your Name" />
+  </div>
+
+  <div>
+    <label for="email">Email *</label>
+    <input type="email" id="email" name="email" required placeholder="you@example.com" />
+  </div>
+
+  <button type="submit">Subscribe</button>
+  <p id="form-message" style="display: none;"></p>
+</form>
+
+<script>
+  const form = document.getElementById('newsletter-form');
+  const messageEl = document.getElementById('form-message');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    messageEl.style.display = 'block';
+    messageEl.textContent = 'Submitting...';
+
+    const payload = {
+      name: form.name.value,
+      email: form.email.value,
+    };
+
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        messageEl.textContent = data.message;
+        form.reset();
+      } else {
+        messageEl.textContent = data.message || 'Error subscribing.';
+      }
+    } catch (err) {
+      messageEl.textContent = 'Network error. Please try again.';
+    }
+  });
+</script>
+
+
   </main>
 </Layout>
 
